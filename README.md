@@ -107,3 +107,81 @@ Checked using pycodestyle (optional external checker)
 ```
 pycodestyle --first main.py
 ```
+
+## Using the module
+
+On first run you will need to create a json storage for the dataset to save its persistent data.
+
+### Phonebook Creation
+
+The phonebook will always be required to be defined to allow compatibility with external API's
+
+*Example (powershell)*
+```
+python .\main.py create export.json
+```
+This will create an empty container
+
+### Phonebook Creation
+*Example (powershell)*
+```
+python .\main.py create export.json
+```
+
+### Add to Phonebook
+*Example (powershell)*
+```
+python .\main.py add "First Last" "123 Fake St" "0404 040 040" export.json
+python .\main.py add "Test User" "35/23 Test Ave" "02 9595 8484" export.json
+```
+
+### Display Content from Datafile
+*Example (powershell)*
+```
+python .\main.py load export.json
+```
+
+Export Dataset as HTML file (output.html)
+```
+python .\main.py load export.json --html
+```
+
+### Search for content in Dataset
+
+positional arguments:
+  phonebook_name   name of datastore
+
+single required arguments:
+  --name
+  --phone
+  --address
+
+required search filter argument
+  --search "FILTER"
+
+optional argument
+  --regx (optional)
+
+*Example (powershell)*
+```
+python .\main.py lookup export.json --name --search First
+```
+> Sample Output
+```
+1 RESULTS FOUND
+Name: First Last
+Address: 123 Fake St
+Phone: 0404 040 040
+```
+
+### Add to Phonebook
+
+Exporting dataset to CSV
+
+```
+python .\main.py export export.json --csv
+```
+This will create a file 'phonebook_output.csv'
+Simple implmentation for now, wanting to expand on this more depending on time.
+Also want to move a lot of this export function to utils but unable to class creation and cirular dependecies.
+
