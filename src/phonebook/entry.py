@@ -2,6 +2,10 @@ import json
 from collections import namedtuple
 
 class Entry(object):
+    """
+    Base Entry class, each entry in a phone book will be 
+    based on this entry object
+    """
     def __init__(self, name, address, phoneNumber):
         self.name = name
         self.address = address

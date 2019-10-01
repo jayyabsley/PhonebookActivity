@@ -6,10 +6,12 @@ import enum
 import json
 import csv
 
-from pb_util import *
 from typing import List
-from entry import Entry
+
+import filestreamers
+from pb_util import openDataStorage, SearchFilter
 from phonebook_container import PhonebookContainer
+from entry import Entry
 
 class SupportedFormats(enum.Enum): 
     JSON = 1 # Default Datastore
@@ -190,4 +192,6 @@ def main():
             
 
 if __name__ == '__main__':
-    main()
+    # main()
+    csv_exporter_instance = filestreamers.define('csvfilestreamer', name='CSVExport')
+    csv_exporter_instance.export_phonebook_data()

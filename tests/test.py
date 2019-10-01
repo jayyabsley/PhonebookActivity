@@ -41,7 +41,6 @@ class TestPhonebook(unittest.TestCase):
              self.assertTrue(json.load(f))
         self.tear_down()
         
-    
 
 if __name__ == '__main__':
     unittest.main()
