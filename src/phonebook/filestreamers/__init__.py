@@ -4,23 +4,30 @@ from importlib import import_module
 from .filestream import FileStreamerBaseClass
 
 def define(exporter_name, *args, **kwargs):
+    '''
+    get an instance of a module within filestreamers.
+    instance must inherit from FileStreamerBaseClass
+    Methods:
+        export_phonebook_data (@abstacemethod)
+    '''
     try:
         if '.' in exporter_name:
-            module_name, class_name = exporter_name.rsplit('.', 1)
+            mod, classname = exporter_name.rsplit('.', 1)
         else:
-            module_name = exporter_name
-            class_name = exporter_name.capitalize()
+            mod = exporter_name
+            classname = exporter_name.capitalize()
 
-        animal_module = import_module('.' + module_name, package='filestreamers')
+        filestreamer_module = import_module('.' + mod, package='filestreamers')
 
-        exporter_class = getattr(animal_module, class_name)
+        exporter_class = getattr(filestreamer_module, classname)
 
         instance = exporter_class(*args, **kwargs)
 
     except (AttributeError, ModuleNotFoundError):
         raise ImportError('{} is not part of our exporter collection!'.format(exporter_name))
     else:
-        if not issubclass(exporter_class, exporter_name):
-            raise ImportError("We currently don't have {}, but you are welcome to send in the request for it!".format(animal_class))
+        print ("{} {}".format(exporter_class, exporter_name))
+        if not issubclass(exporter_class, FileStreamerBaseClass):
+            raise ImportError("Unable to import {}!".format(exporter_name))
 
     return instance

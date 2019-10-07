@@ -12,7 +12,9 @@ class PhonebookContainer(object):
         self.entries = entries
 
     def add(self, new_entry, force):
-        # Check for unique data against phoneNumber
+        '''
+        Add data to container, entry must be of type (Entry)
+        '''
         if not force:
             for data in self.entries:
                 if new_entry.phoneNumber == data.phoneNumber:
@@ -21,7 +23,34 @@ class PhonebookContainer(object):
         
         self.entries.append(new_entry)
 
+    def get_attribute_list(self):
+        """
+        Get all attribute keys stores in Entries
+        """
+        attributes = [attr for attr in vars(self.entries[0]) if not attr.startswith('__')]
+        return attributes
+
+    def to_dict(self):
+        """
+        Convert class data table to hash table
+        dict will contain all data in entries as will not need
+        to be manually added here
+        """
+        d = {}
+        i = 0
+        for entry in self.entries:
+            d[i] = {}
+            attributes = self.get_attribute_list()
+            print (attributes)
+            for data in attributes:
+                d[i][data] = entry.__getattribute__(data)
+            i = i + 1
+        return d
+
     def find(self,search_type:SearchFilter, search_params, use_regx):
+        '''
+        Search for a specific dataset
+        '''
         regx = re.compile(search_params)
         found_results = []
         if search_type is SearchFilter.name:
@@ -44,7 +73,6 @@ class PhonebookContainer(object):
                         found_results.append(i)
                     elif search_params in i.address:
                         found_results.append(i)
-
         return found_results
 
     def display(self):

@@ -7,7 +7,6 @@ import json
 import csv
 
 from typing import List
-
 import filestreamers
 from pb_util import openDataStorage, SearchFilter
 from phonebook_container import PhonebookContainer
@@ -16,8 +15,12 @@ from entry import Entry
 class SupportedFormats(enum.Enum): 
     JSON = 1 # Default Datastore
     CSV = 2
+    HTML = 3
 
 def create_phonebook(phonebook_name):
+    '''
+    Create an empty phonebook datastore
+    '''
     filename = '%s' % phonebook_name
     if os.path.exists(filename):
         # Raise error if file exists and inform the user
@@ -26,6 +29,9 @@ def create_phonebook(phonebook_name):
         pass
 
 def load_phonebook(phonebook_name):
+    '''
+    Load data in from an existing datastore
+    '''
     with open(phonebook_name, 'r') as f:
         try:
             # Attempt to load data from existing phonebook dataset
@@ -46,58 +52,42 @@ def load_phonebook(phonebook_name):
         except json.decoder.JSONDecodeError as e:
             # JSON Error
             print ("JSON Error: {}".format(e))
-        
 
-# display content of phonebook through CLI
-def display_phonebook_content(phonebook_name, export_to_html):
+
+def export_phonebook(phonebook_name, export_type:SupportedFormats, output_filename="export"):
+    '''
+    Export data from a specified datastore to an specified dataformat
+    To add a new data format you will need to add a new streamer within FILESTREAMERS module
+    It must inherit from FileStreamerBaseClass
+    '''
     loaded_data = load_phonebook(phonebook_name)
-    if export_to_html:
-        output_to_html(loaded_data, phonebook_name)
-    else:
-        print(loaded_data.display())
 
-# outputing content to a html file with basic templated content
-def output_to_html(phonebook_entries, phonebook_name):
-    with open('output.html', 'w') as htmlFile:
-        htmlFile.write('<html>')
-        htmlFile.write('<body>')
-        htmlFile.write('<table>')
-        htmlFile.write('<h1>Output from {}</h1>'.format(phonebook_name))
-        for entry in phonebook_entries.entries:
-            htmlFile.write('Name: {}<br>'.format(entry.name))
-            htmlFile.write('Phone Number: {}<br>'.format(entry.phoneNumber))
-            htmlFile.write('Address: {}<br>'.format(entry.address))
-            htmlFile.write('<br>')
-        htmlFile.write('</tr>')
-        htmlFile.write('</table>')
-        htmlFile.write('</body>')
-        htmlFile.write('</html>')
-        htmlFile.close()
-
-def export_phonebook(phonebook_name, export_type:SupportedFormats):
-    loaded_data = load_phonebook(phonebook_name)
+    if export_type == SupportedFormats.JSON:
+        csv_exporter_instance = filestreamers.define('jsonfilestreamer', name='JSONExport')
+        csv_exporter_instance.export_phonebook_data(loaded_data.to_dict(), output_filename)
+    
     if export_type == SupportedFormats.CSV:
-        print ('Exporting CSV')
-        output_to_csv(loaded_data)
+        csv_exporter_instance = filestreamers.define('csvfilestreamer', name='CSVExport')
+        csv_exporter_instance.export_phonebook_data(loaded_data.to_dict(), output_filename)
 
-# Basic implementation of a CSV output.
-# TODO: Move this into pb_util but need to restructure to avoid circular dependency
-def output_to_csv(phonebook_entires):
-    with open('phonebook_output.csv', mode='w') as csv_file:
-        phonebook_writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-        phonebook_writer.writerow(['name', 'phone', 'address'])
-        for entry in phonebook_entires.entries:
-            phonebook_writer.writerow([entry.name, entry.phoneNumber, entry.address])
-
+    if export_type == SupportedFormats.HTML:
+        html_exporter_instance = filestreamers.define('htmlfilestreamer', name='HTMLExport')
+        html_exporter_instance.export_phonebook_data(loaded_data.to_dict(), output_filename)
 
 # create new entity from unformed data
 def create_entity(name, address, number):
+    '''
+    Form entry object from a dataset
+    '''
     new_user = Entry(name, address, number)
     return new_user
 
 
 # add a new name
 def add_entry(new_entity, phonebook_name, force):
+    '''
+    Add new entry to phonebook
+    '''
     try:
         phonebook_data = load_phonebook(phonebook_name)
         phonebook_data.add(new_entity, force)
@@ -113,9 +103,12 @@ def add_entry(new_entity, phonebook_name, force):
         except TypeError as e:
             print("Unable to serialize the object: {}".format(e))
 
-# Lookup entry using simple contains search
-# Expanded to use regx for more refined search
-def lookup_entry(phonebook_name, search_type:SearchFilter, search_params, use_regx):
+
+def lookup_entry(phonebook_name, search_type:SearchFilter, search_params, use_regx, export_results_dest):
+    '''
+    Lookup entry using simple contains search
+    Expanded to use regx for more refined search
+    '''
     phonebook_data = load_phonebook(phonebook_name)
     try:
         elements_found = phonebook_data.find(search_type, search_params, use_regx)
@@ -124,7 +117,19 @@ def lookup_entry(phonebook_name, search_type:SearchFilter, search_params, use_re
             if use_regx:
                 print ('> results searched using regular expression\n')
             for element in elements_found:
+                for el in elements_found:
+                    try:
+                        result_pb.add(el, True)
+                    except UnboundLocalError:
+                        # Unable to find existing dataset create new Phonebook Container
+                        result_pb = PhonebookContainer([el])
                 print (element.display(), '\n')
+                if len(export_results_dest) > 0:
+                    print (result_pb.to_dict())
+                    print ("Outputting to {}".format(export_results_dest))
+                    json_exporter_instance = filestreamers.define('jsonfilestreamer', name='JSONExport')
+                    json_exporter_instance.export_phonebook_data(result_pb.to_dict(), export_results_dest)
+                
         else:
             print ('no results found.')
     except AttributeError:
@@ -149,11 +154,7 @@ group.add_argument('--phone', dest='phoneFilter', action='store_true')
 group.add_argument('--address', dest='addressFilter', action='store_true')
 p.add_argument('--search', dest='filter', action='store', required=True)
 p.add_argument('--regx', dest='use_regx', action='store_true', required=False)
-
-# Load Args
-p = subparsers.add_parser('load', help='load all entries')
-p.add_argument('phonebook_name', action='store', help='name of datastore')
-p.add_argument('--html', dest='export_html', action='store_true', required=False)
+p.add_argument('--export', dest='export_dest', action='store', required=False)
 
 # Add Args
 p = subparsers.add_parser('add', help='(add) will append a new entry into the stored container')
@@ -167,7 +168,9 @@ p.add_argument('--force', dest='force', action='store_true', help='force duplica
 # Export Args
 p = subparsers.add_parser('export', help='(export) the stored data as a desired output format')
 p.add_argument('phonebook_name', action='store', help='dataset filename')
+p.add_argument('--json', dest='exportJSON', action='store_true', help='output format will be JSON')
 p.add_argument('--csv', dest='exportCSV', action='store_true', help='output format will be CSV')
+p.add_argument('--html', dest='exportHTML', action='store_true', help='output format will be HTML')
 
 def main():
     args = parser.parse_args()
@@ -183,15 +186,16 @@ def main():
             searchCat = SearchFilter.name
         if args.addressFilter:
             searchCat = SearchFilter.address
-        lookup_entry(args.phonebook_name, searchCat, args.filter, args.use_regx)
-    elif args.commandName == 'load':
-        display_phonebook_content(args.phonebook_name, args.export_html)
+        lookup_entry(args.phonebook_name, searchCat, args.filter, args.use_regx, args.export_dest)
     elif args.commandName == 'export':
+        if args.exportJSON:
+            export_phonebook(args.phonebook_name, SupportedFormats.JSON)
         if args.exportCSV:
             export_phonebook(args.phonebook_name, SupportedFormats.CSV)
+        if args.exportHTML:
+            export_phonebook(args.phonebook_name, SupportedFormats.HTML)
             
 
 if __name__ == '__main__':
-    # main()
-    csv_exporter_instance = filestreamers.define('csvfilestreamer', name='CSVExport')
-    csv_exporter_instance.export_phonebook_data()
+    main()
+    

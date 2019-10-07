@@ -141,6 +141,7 @@ required search filter argument
 
 optional argument
   --regx (optional)
+  --export "EXPORT FILE NAME"
 
 *Example (powershell)*
 ```
@@ -154,14 +155,26 @@ Address: 123 Fake St
 Phone: 0404 040 040
 ```
 
-### Add to Phonebook
+### Exporting
 
 Exporting dataset to CSV
 
+filename does not require filename extension
 ```
-python .\main.py export export.json --csv
+python main.py export filename --csv
+python main.py export filename --html  
+python main.py export filename --json
 ```
 This will create a file 'phonebook_output.csv'
 Simple implmentation for now, wanting to expand on this more depending on time.
 Also want to move a lot of this export function to utils but unable to class creation and cirular dependecies.
 
+# FileStreamers Module
+
+This module is a submodule within src
+This module has a simple factory setup that will from a base class (FileStreamerBaseClass)
+allow for a abstract method be called (export_phonebook_data).
+From here I've created three filestreamers (JSON, CSV, HTML)
+You can extend the phonebook data and the filestreamers will export all of the data without manually extended these submodules.
+
+They are used when exporting datasets (using either export or lookup (defult JSON as this is the default datastore))

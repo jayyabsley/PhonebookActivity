@@ -1,5 +1,4 @@
-- [] Remove Hardcoded exports
-- [] Implement @abstractmethod through exporterFileStreaming for the purpose of easily extending
-- [] Create using a factory pattern for the file_streamer
-- [] Pull in documentation into docstring
-- [] Extract a list of searched people into a list that can be exported
+- [x] Implement @abstractmethod through exporterFileStreaming for the purpose of easily extending
+- [x] Create using a factory pattern for the file_streamer
+- [x] Pull in documentation into docstring
+- [x] Extract a list of searched people into a list that can be exported

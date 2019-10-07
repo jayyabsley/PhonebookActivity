@@ -8,6 +8,9 @@ class SearchFilter(enum.Enum):
     address = 3
 
 def openDataStorage(dataStorageName):
+    '''
+    helper function: open a dataset file
+    '''
     try:
         f = open("{}".format(dataStorageName),"w")
         return f

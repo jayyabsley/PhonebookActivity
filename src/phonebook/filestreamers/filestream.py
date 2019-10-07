@@ -8,4 +8,7 @@ class FileStreamerBaseClass(metaclass=ABCMeta):
     
     @abstractmethod
     def export_phonebook_data(self):
+        '''
+        Implemented method to output dataset
+        '''
         pass
